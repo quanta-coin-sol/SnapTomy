@@ -11,7 +11,7 @@ class WalletAnalyzer:
         result = {
             "top_holder_concentration": 0.0,
             "holder_count": 0,
-            "score": 70,
+            "score": 60,
             "issues": [],
         }
         return result

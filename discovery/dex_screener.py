@@ -1,4 +1,5 @@
 import logging
+from datetime import datetime
 
 import aiohttp
 
@@ -14,7 +15,7 @@ class DexScreenerSource(DiscoverySource):
         super().__init__("dex_screener", config)
 
     async def fetch(self) -> list[DiscoveredToken]:
-        chains = ["solana", "bsc", "ethereum"]
+        chains = ["solana", "bsc", "ethereum", "base"]
         tokens = []
         async with aiohttp.ClientSession() as session:
             for chain in chains:
@@ -24,7 +25,7 @@ class DexScreenerSource(DiscoverySource):
                         if resp.status != 200:
                             continue
                         data = await resp.json()
-                        pairs = data.get("pairs", [])[:20]
+                        pairs = data.get("pairs", [])[:15]
                         for p in pairs:
                             if float(p.get("fdv", 0)) == 0:
                                 continue

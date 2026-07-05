@@ -1,44 +1,74 @@
 {
   "bot_token": "8822383019:AAFkgbR-Hs-6HrvBpVnjohZyqPEir4OjRlk",
-  "admin_ids": [123456789],
+  "admin_ids": [],
   "api_host": "0.0.0.0",
   "api_port": 8002,
   "database_url": null,
   "log_level": "INFO",
+  "paper_trading": true,
+  "initial_balance_usd": 10000,
   "trading": {
     "enabled": true,
     "max_positions": 5,
     "max_position_size_percent": 20,
-    "min_analysis_score": 60,
+    "min_analysis_score": 70,
     "default_slippage": 5.0,
-    "strategy": "aggressive",
-    "min_liquidity_usd": 5000
+    "strategy": "conservative",
+    "min_liquidity_usd": 30000,
+    "max_age_seconds": 600,
+    "entry": {
+      "min_score_buy_small": 70,
+      "min_score_buy": 80,
+      "min_score_strong_buy": 90,
+      "size_buy_small_percent": 0.25,
+      "size_buy_percent": 0.5,
+      "size_strong_buy_percent": 1.0,
+      "size_max_percent": 2.0
+    },
+    "exit": {
+      "stop_loss_percent": -15,
+      "take_profit_percent": 50,
+      "trailing_stop_activation_percent": 20,
+      "trailing_stop_distance_percent": 10,
+      "score_drop_threshold": 20,
+      "rug_sell_immediately": true
+    }
   },
   "discovery": {
-    "poll_interval_seconds": 60,
+    "poll_interval_seconds": 30,
     "max_tokens_per_poll": 20
   },
   "risk": {
-    "max_rug_risk_percent": 70,
-    "max_wallet_concentration_percent": 30,
+    "max_rug_risk_percent": 60,
+    "max_wallet_concentration_percent": 20,
     "min_holder_count": 50,
-    "max_owner_balance_percent": 5
+    "max_owner_balance_percent": 5,
+    "daily_loss_limit_usd": 500,
+    "max_chain_exposure_percent": 40,
+    "circuit_breaker_pnl_percent": -30
   },
   "notification": {
-    "telegram_enabled": true,
+    "telegram_enabled": false,
     "webhook_enabled": false,
-    "webhook_url": null
+    "webhook_url": null,
+    "alert_on_buy": true,
+    "alert_on_sell": true,
+    "alert_on_rug": true,
+    "alert_on_error": true
   },
   "rpc": {
     "solana": "https://api.mainnet-beta.solana.com",
     "bsc": "https://bsc-dataseed.binance.org",
-    "ethereum": "https://eth.llamarpc.com"
+    "ethereum": "https://eth.llamarpc.com",
+    "base": "https://mainnet.base.org"
   },
   "api_keys": {
     "birdeye": null,
     "twitter": null,
     "etherscan": null,
     "bscscan": null,
-    "solscan": null
+    "solscan": null,
+    "helius": null,
+    "alchemy": null
   }
 }

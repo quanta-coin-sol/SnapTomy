@@ -13,7 +13,7 @@ class SocialAnalyzer:
             "has_twitter": False,
             "has_telegram": False,
             "has_discord": False,
-            "score": 50,
+            "score": 40,
             "issues": [],
         }
         return result
