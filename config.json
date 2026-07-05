@@ -1,0 +1,44 @@
+{
+  "bot_token": "8822383019:AAFkgbR-Hs-6HrvBpVnjohZyqPEir4OjRlk",
+  "admin_ids": [123456789],
+  "api_host": "0.0.0.0",
+  "api_port": 8002,
+  "database_url": null,
+  "log_level": "INFO",
+  "trading": {
+    "enabled": true,
+    "max_positions": 5,
+    "max_position_size_percent": 20,
+    "min_analysis_score": 60,
+    "default_slippage": 5.0,
+    "strategy": "aggressive",
+    "min_liquidity_usd": 5000
+  },
+  "discovery": {
+    "poll_interval_seconds": 60,
+    "max_tokens_per_poll": 20
+  },
+  "risk": {
+    "max_rug_risk_percent": 70,
+    "max_wallet_concentration_percent": 30,
+    "min_holder_count": 50,
+    "max_owner_balance_percent": 5
+  },
+  "notification": {
+    "telegram_enabled": true,
+    "webhook_enabled": false,
+    "webhook_url": null
+  },
+  "rpc": {
+    "solana": "https://api.mainnet-beta.solana.com",
+    "bsc": "https://bsc-dataseed.binance.org",
+    "ethereum": "https://eth.llamarpc.com"
+  },
+  "api_keys": {
+    "birdeye": null,
+    "twitter": null,
+    "etherscan": null,
+    "bscscan": null,
+    "solscan": null
+  }
+}

@@ -1,0 +1,11 @@
+*.pem
+*.key
+__pycache__/
+venv/
+.env
+*.pyc
+positions.json
+bot.log
+nohup.out
+dist/
+node_modules/
