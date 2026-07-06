@@ -19,7 +19,7 @@ async def main():
     config = load_config()
     tg_token = config["bot_token"]
     tg_app = ApplicationBuilder().token(tg_token).build()
-    notification_mgr = NotificationManager(config, tg_app.bot if config.get("notification", {}).get("telegram_enabled") else None)
+    notification_mgr = NotificationManager(config, tg_app.bot)
     discovery = DiscoveryEngine(config)
     trading = TradingEngine(config, notification_mgr)
     set_trading_engine(trading)

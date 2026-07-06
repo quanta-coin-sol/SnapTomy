@@ -48,7 +48,7 @@
     "circuit_breaker_pnl_percent": -30
   },
   "notification": {
-    "telegram_enabled": false,
+    "telegram_enabled": true,
     "webhook_enabled": false,
     "webhook_url": null,
     "alert_on_buy": true,
