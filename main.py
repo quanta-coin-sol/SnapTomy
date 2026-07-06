@@ -23,18 +23,22 @@ async def main():
     discovery.on_token_discovered(trading.enqueue_for_analysis)
     setup_handlers(tg_app, config, discovery, trading)
 
-    async def run_discovery():
-        async for token in discovery.run():
-            pass
-
-    async def run_trading():
-        await trading.run()
-
-    async def run_telegram():
-        await tg_app.run_polling(drop_pending_updates=True)
+    await tg_app.initialize()
+    await tg_app.start()
+    await tg_app.updater.start_polling()
 
     logger.info("SnapTomy starting (paper trading mode)" if config.get("paper_trading") else "SnapTomy starting (LIVE mode)")
-    await asyncio.gather(run_discovery(), run_trading(), run_telegram())
+
+    task = asyncio.create_task(trading.run())
+
+    async for token in discovery.run():
+        pass
+
+    task.cancel()
+    await asyncio.gather(task, return_exceptions=True)
+    await tg_app.updater.stop()
+    await tg_app.stop()
+    await tg_app.shutdown()
 
 
 if __name__ == "__main__":
