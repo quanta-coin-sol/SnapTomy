@@ -22,15 +22,17 @@ async def main():
     notification_mgr = NotificationManager(config, tg_app.bot)
 
     async def post_init(app):
+        from telegram import MenuButtonCommands
         await app.bot.set_my_commands([
-            ("menu", "Show main menu"),
-            ("portfolio", "View portfolio"),
-            ("positions", "View open positions"),
-            ("buy", "Buy a token <address> <usd>"),
+            ("menu", "Main menu"),
+            ("portfolio", "Portfolio"),
+            ("positions", "Open positions"),
+            ("buy", "Buy <address> <usd>"),
             ("sell", "Sell a token"),
             ("status", "Bot health"),
-            ("help", "Commands help"),
+            ("help", "Help"),
         ])
+        await app.bot.set_chat_menu_button(menu_button=MenuButtonCommands())
 
     tg_app.post_init = post_init
     discovery = DiscoveryEngine(config)
