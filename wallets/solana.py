@@ -1,8 +1,6 @@
 import logging
-import os
 
-from solana.keypair import Keypair
-from solders.keypair import Keypair as SoldersKeypair
+from solders.keypair import Keypair
 
 logger = logging.getLogger(__name__)
 
@@ -18,10 +16,9 @@ class SolanaWallet:
             key = key.strip()
             if key.startswith("["):
                 import json
-                self.keypair = SoldersKeypair.from_bytes(bytes(json.loads(key)))
+                self.keypair = Keypair.from_bytes(bytes(json.loads(key)))
             else:
-                from solders.keypair import Keypair as K
-                self.keypair = K.from_base58_string(key)
+                self.keypair = Keypair.from_base58_string(key)
             logger.info(f"Wallet loaded: {self.keypair.pubkey()}")
         except Exception as e:
             logger.error(f"Failed to load wallet: {e}")
