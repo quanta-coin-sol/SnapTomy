@@ -37,8 +37,12 @@ class TradingEngine:
         self.notifier = notification_mgr or NotificationManager(config)
         self.queue = asyncio.Queue()
         self._running = False
+        self._seen_tokens: set[str] = set()
 
     async def enqueue_for_analysis(self, token: DiscoveredToken):
+        if token.address in self._seen_tokens:
+            return
+        self._seen_tokens.add(token.address)
         await self.queue.put(token)
 
     async def run(self):
@@ -90,10 +94,9 @@ class TradingEngine:
             logger.info(f"Skipping {token.symbol}: recommendation is {rec}")
             return
 
-        position_size = self._calc_position_size(rec)
-        amount_usd = min(position_size, self.portfolio.balance_usd)
+        amount_usd = self._calc_position_size(rec)
         if amount_usd < 10:
-            logger.info(f"Insufficient balance for {token.symbol}")
+            logger.info(f"Position size ${amount_usd:.2f} too small for {token.symbol}")
             return
 
         liq = contract.get("liquidity_usd", 0)
@@ -114,7 +117,7 @@ class TradingEngine:
                 score=score_result["overall"],
                 tx=exec_result.get("tx"),
             )
-            logger.info(f"BOUGHT {token.symbol}: ${amount_usd} @ ${price:.8f}")
+            logger.info(f"BOUGHT {token.symbol}: ${amount_usd:.2f} @ ${price:.8f}")
             await self.notifier.send_buy_alert(
                 {"symbol": token.symbol, "address": token.address, "amount_usd": amount_usd},
                 score_result["overall"],
