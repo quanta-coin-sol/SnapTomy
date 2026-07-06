@@ -58,6 +58,7 @@ def setup_handlers(app, config, discovery, trading):
         ("^mode_toggle$", _toggle_mode),
     ]:
         app.add_handler(CallbackQueryHandler(handler_fn, pattern=pattern))
+    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, cmd_menu))
     return app
 
 

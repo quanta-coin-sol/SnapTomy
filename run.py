@@ -20,6 +20,19 @@ async def main():
     tg_token = config["bot_token"]
     tg_app = ApplicationBuilder().token(tg_token).build()
     notification_mgr = NotificationManager(config, tg_app.bot)
+
+    async def post_init(app):
+        await app.bot.set_my_commands([
+            ("menu", "Show main menu"),
+            ("portfolio", "View portfolio"),
+            ("positions", "View open positions"),
+            ("buy", "Buy a token <address> <usd>"),
+            ("sell", "Sell a token"),
+            ("status", "Bot health"),
+            ("help", "Commands help"),
+        ])
+
+    tg_app.post_init = post_init
     discovery = DiscoveryEngine(config)
     trading = TradingEngine(config, notification_mgr)
     set_trading_engine(trading)
