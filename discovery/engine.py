@@ -6,6 +6,7 @@ from .base import DiscoveredToken
 from .dex_screener import DexScreenerSource
 from .birdeye import BirdeyeSource
 from .pump_fun import PumpFunSource
+from .pump_fun_rpc import PumpFunRpcSource
 from .raydium import RaydiumSource
 from .rug_check import RugCheckSource
 from .twitter_source import TwitterSource
@@ -18,7 +19,7 @@ class DiscoveryEngine:
     def __init__(self, config: dict):
         self.config = config
         self.sources = [
-            PumpFunSource(config),
+            PumpFunRpcSource(config),
             RaydiumSource(config),
             DexScreenerSource(config),
             BirdeyeSource(config),
