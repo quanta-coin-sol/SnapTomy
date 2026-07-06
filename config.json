@@ -70,5 +70,10 @@
     "solscan": null,
     "helius": null,
     "alchemy": null
+  },
+  "wallet": {
+    "solana_private_key": null,
+    "max_sol_per_trade": 0.1,
+    "min_sol_balance": 0.05
   }
 }

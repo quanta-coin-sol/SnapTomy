@@ -4,6 +4,7 @@ import time
 
 from analysis.contract_analyzer import ContractAnalyzer
 from analysis.data_collector import DataCollector
+from analysis.honeypot import HoneypotDetector
 from analysis.scorer import Scorer
 from analysis.social_analyzer import SocialAnalyzer
 from analysis.wallet_analyzer import WalletAnalyzer
@@ -28,6 +29,7 @@ class TradingEngine:
         self.contract_analyzer = ContractAnalyzer(config)
         self.wallet_analyzer = WalletAnalyzer(config)
         self.social_analyzer = SocialAnalyzer(config)
+        self.honeypot = HoneypotDetector(config)
         self.scorer = Scorer(config)
         self.executor = TradeExecutor(config)
         self.position_manager = PositionManager(config)
@@ -77,6 +79,11 @@ class TradingEngine:
 
         data = await self.data_collector.collect(token.address, token.chain)
         contract = await self.contract_analyzer.analyze(token.address, token.chain)
+        honeypot = await self.honeypot.check(token.address, token.chain)
+        if honeypot.get("is_honeypot"):
+            logger.warning(f"Honeypot detected for {token.symbol}, skipping")
+            return
+        contract["is_honeypot"] = honeypot.get("is_honeypot", False)
         wallets = await self.wallet_analyzer.analyze(token.address, token.chain)
         social = await self.social_analyzer.analyze(token.address, token.chain)
 
