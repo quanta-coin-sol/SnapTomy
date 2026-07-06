@@ -45,15 +45,18 @@ class TradingEngine:
         if token.address in self._seen_tokens:
             return
         self._seen_tokens.add(token.address)
+        logger.info(f"Enqueued {token.symbol} ({token.address[:8]}...)")
         await self.queue.put(token)
 
     async def run(self):
         self._running = True
         monitor_task = asyncio.create_task(self._monitor_positions())
+        logger.info("Trading engine started, waiting for tokens...")
 
         while self._running:
             try:
                 token = await asyncio.wait_for(self.queue.get(), timeout=5)
+                logger.info(f"Engine received: {token.symbol}")
                 await self._analyze_and_trade(token)
             except asyncio.TimeoutError:
                 continue
@@ -66,17 +69,18 @@ class TradingEngine:
         open_count = len(self.position_manager.get_open_positions())
         max_pos = self.trading_cfg.get("max_positions", 5)
         if open_count >= max_pos:
-            logger.debug(f"Max positions ({max_pos}) reached, skipping {token.symbol}")
+            logger.info(f"Max positions ({max_pos}) reached, skipping {token.symbol}")
             return
 
         age = time.time() - (token.discovered_at.timestamp() if token.discovered_at else time.time())
         max_age = self.trading_cfg.get("max_age_seconds", 600)
         if age > max_age:
-            logger.debug(f"{token.symbol} too old ({age:.0f}s > {max_age}s), skipping")
+            logger.info(f"{token.symbol} too old ({age:.0f}s > {max_age}s), skipping")
             return
 
         logger.info(f"Analyzing {token.symbol} ({token.address[:8]}...)")
 
+        logger.info(f"  -> collecting data for {token.symbol}")
         data = await self.data_collector.collect(token.address, token.chain)
         contract = await self.contract_analyzer.analyze(token.address, token.chain)
         honeypot = await self.honeypot.check(token.address, token.chain)
