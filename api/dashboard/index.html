@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SnapTomy</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0f0f13; color: #e0e0e0; }
+.container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+h1 { font-size: 24px; color: #fff; }
+h1 span { color: #6c5ce7; }
+.status { display: flex; gap: 12px; align-items: center; }
+.badge { padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 600; }
+.badge-green { background: #00b89420; color: #00b894; border: 1px solid #00b89440; }
+.badge-yellow { background: #fdcb6e20; color: #fdcb6e; border: 1px solid #fdcb6e40; }
+.badge-purple { background: #6c5ce720; color: #6c5ce7; border: 1px solid #6c5ce740; }
+.cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px; }
+.card { background: #1a1a24; border-radius: 12px; padding: 16px; border: 1px solid #2a2a35; }
+.card-label { font-size: 12px; color: #888; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; }
+.card-value { font-size: 28px; font-weight: 700; color: #fff; }
+.card-value.green { color: #00b894; }
+.card-value.red { color: #e17055; }
+.card-value.purple { color: #6c5ce7; }
+.section { background: #1a1a24; border-radius: 12px; padding: 20px; margin-bottom: 24px; border: 1px solid #2a2a35; }
+.section-title { font-size: 16px; font-weight: 600; margin-bottom: 16px; color: #fff; }
+table { width: 100%; border-collapse: collapse; }
+th { text-align: left; font-size: 12px; color: #888; text-transform: uppercase; letter-spacing: 1px; padding: 8px 12px; border-bottom: 1px solid #2a2a35; }
+td { padding: 10px 12px; font-size: 14px; border-bottom: 1px solid #2a2a3520; }
+tr:hover td { background: #2a2a3520; }
+.text-green { color: #00b894; }
+.text-red { color: #e17055; }
+.text-muted { color: #888; }
+.logs { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 12px; line-height: 1.6; max-height: 400px; overflow-y: auto; }
+.log-line { padding: 2px 0; color: #a0a0b0; }
+.log-INFO { color: #6c5ce7; }
+.log-WARNING { color: #fdcb6e; }
+.log-ERROR { color: #e17055; }
+.refresh { background: #6c5ce7; color: #fff; border: none; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-size: 14px; }
+.refresh:hover { background: #5a4bd1; }
+.empty { text-align: center; padding: 40px; color: #888; }
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <div><h1>Snap<span>Tomy</span></h1></div>
+    <div class="status">
+      <span class="badge badge-green" id="statusBadge">Running</span>
+      <span class="badge badge-yellow" id="modeBadge">Paper</span>
+      <button class="refresh" onclick="fetchAll()">Refresh</button>
+    </div>
+  </header>
+
+  <div class="cards" id="metricsCards"></div>
+
+  <div class="section">
+    <div class="section-title">Open Positions</div>
+    <div id="openPositions"><div class="empty">No open positions</div></div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">Recent Logs</div>
+    <div class="logs" id="logsContainer"><div class="empty">Loading...</div></div>
+  </div>
+</div>
+
+<script>
+async function fetchAPI(path) {
+  try {
+    const r = await fetch(path);
+    return await r.json();
+  } catch { return null; }
+}
+
+function formatUsd(v) { return '$' + Number(v || 0).toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2}); }
+function formatPct(v) { return (v || 0).toFixed(1) + '%'; }
+
+function renderMetrics(metrics) {
+  const cards = [
+    { label: 'Balance', value: formatUsd(metrics?.balance_usd), cls: '' },
+    { label: 'Total Value', value: formatUsd(metrics?.total_value_usd), cls: '' },
+    { label: 'Realized PnL', value: formatUsd(metrics?.realized_pnl_usd), cls: (metrics?.realized_pnl_usd || 0) >= 0 ? 'green' : 'red' },
+    { label: 'Unrealized PnL', value: formatUsd(metrics?.unrealized_pnl_usd), cls: (metrics?.unrealized_pnl_usd || 0) >= 0 ? 'green' : 'red' },
+    { label: 'Win Rate', value: formatPct(metrics?.win_rate_pct), cls: (metrics?.win_rate_pct || 0) >= 50 ? 'green' : 'red' },
+    { label: 'ROI', value: formatPct(metrics?.roi_pct), cls: (metrics?.roi_pct || 0) >= 0 ? 'green' : 'red' },
+    { label: 'Drawdown', value: formatPct(metrics?.max_drawdown_pct), cls: 'red' },
+    { label: 'Trades', value: metrics?.total_trades || 0, cls: 'purple' },
+  ];
+  document.getElementById('metricsCards').innerHTML = cards.map(c =>
+    `<div class="card"><div class="card-label">${c.label}</div><div class="card-value ${c.cls}">${c.value}</div></div>`
+  ).join('');
+}
+
+function renderPositions(data) {
+  const open = data?.open || [];
+  const el = document.getElementById('openPositions');
+  if (!open.length) {
+    el.innerHTML = '<div class="empty">No open positions</div>';
+    return;
+  }
+  el.innerHTML = `<table><thead><tr><th>Token</th><th>Chain</th><th>Entry</th><th>Value</th><th>PnL</th><th>Score</th><th>Age</th></tr></thead><tbody>
+    ${open.map(p => {
+      const pnl = p.pnl_percent || 0;
+      const age = p.opened_at ? Math.floor((Date.now()/1000 - p.opened_at)) : 0;
+      const mins = Math.floor(age / 60);
+      return `<tr>
+        <td>${p.symbol || '?'}</td>
+        <td class="text-muted">${p.chain}</td>
+        <td>${formatUsd(p.entry_price)}</td>
+        <td>${formatUsd(p.current_value_usd)}</td>
+        <td class="${pnl >= 0 ? 'text-green' : 'text-red'}">${formatPct(pnl)}</td>
+        <td>${p.score || '-'}</td>
+        <td class="text-muted">${mins}m</td>
+      </tr>`;
+    }).join('')}
+  </tbody></table>`;
+}
+
+function renderLogs(logs) {
+  const lines = logs?.logs || [];
+  const el = document.getElementById('logsContainer');
+  if (!lines.length) {
+    el.innerHTML = '<div class="empty">No logs</div>';
+    return;
+  }
+  el.innerHTML = lines.map(l => {
+    const level = l.includes('ERROR') ? 'ERROR' : l.includes('WARNING') ? 'WARNING' : 'INFO';
+    return `<div class="log-line log-${level}">${l.replace(/</g,'&lt;')}</div>`;
+  }).join('');
+  el.scrollTop = el.scrollHeight;
+}
+
+async function fetchAll() {
+  const [health, portfolio, positions, logs] = await Promise.all([
+    fetchAPI('/api/health'),
+    fetchAPI('/api/portfolio'),
+    fetchAPI('/api/positions'),
+    fetchAPI('/api/logs?lines=50'),
+  ]);
+  if (health) {
+    document.getElementById('statusBadge').textContent = health.status === 'ok' ? 'Running' : 'Error';
+    document.getElementById('statusBadge').className = 'badge ' + (health.status === 'ok' ? 'badge-green' : 'badge-red');
+  }
+  if (portfolio) {
+    document.getElementById('modeBadge').textContent = portfolio.balance_usd !== undefined ? 'Paper' : 'Live';
+    renderMetrics(portfolio);
+  }
+  if (positions) renderPositions(positions);
+  if (logs) renderLogs(logs);
+}
+
+fetchAll();
+setInterval(fetchAll, 10000);
+</script>
+</body>
+</html>

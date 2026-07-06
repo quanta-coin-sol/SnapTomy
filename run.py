@@ -4,7 +4,7 @@ import logging
 import uvicorn
 from telegram.ext import ApplicationBuilder
 
-from api.server import app
+from api.server import app, set_trading_engine
 from bot.handlers import setup_handlers
 from config import load_config
 from discovery.engine import DiscoveryEngine
@@ -22,6 +22,7 @@ async def main():
     notification_mgr = NotificationManager(config, tg_app.bot if config.get("notification", {}).get("telegram_enabled") else None)
     discovery = DiscoveryEngine(config)
     trading = TradingEngine(config, notification_mgr)
+    set_trading_engine(trading)
     discovery.on_token_discovered(trading.enqueue_for_analysis)
     setup_handlers(tg_app, config, discovery, trading)
 
