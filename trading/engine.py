@@ -66,6 +66,8 @@ class TradingEngine:
         monitor_task.cancel()
 
     async def _analyze_and_trade(self, token: DiscoveredToken):
+        if not self.trading_cfg.get("enabled", True):
+            return
         open_count = len(self.position_manager.get_open_positions())
         max_pos = self.trading_cfg.get("max_positions", 5)
         if open_count >= max_pos:
