@@ -3,6 +3,7 @@ import logging
 from typing import AsyncGenerator, Callable, Optional
 
 from .base import DiscoveredToken
+from .dex_listings import DexListingsSource
 from .dex_screener import DexScreenerSource
 from .birdeye import BirdeyeSource
 from .pump_fun import PumpFunSource
@@ -22,6 +23,11 @@ class DiscoveryEngine:
             PumpFunRpcSource(config),
             RaydiumSource(config),
             DexScreenerSource(config),
+            DexListingsSource("meteora", config),
+            DexListingsSource("orca", config),
+            DexListingsSource("uniswap", config),
+            DexListingsSource("pancakeswap", config),
+            DexListingsSource("aerodrome", config),
             BirdeyeSource(config),
             RugCheckSource(config),
             TwitterSource(config),

@@ -8,7 +8,7 @@
   "paper_trading": true,
   "initial_balance_usd": 10000,
   "trading": {
-    "enabled": false,
+    "enabled": true,
     "max_positions": 5,
     "max_position_size_percent": 20,
     "min_analysis_score": 70,
