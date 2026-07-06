@@ -27,9 +27,11 @@ def setup_handlers(app, config, discovery, trading):
     app.add_handler(CommandHandler("positions", cmd_positions))
     app.add_handler(CommandHandler("portfolio", cmd_portfolio))
     app.add_handler(CommandHandler("help", cmd_help))
-    app.add_handler(CallbackQueryHandler(button_handler))
+    app.add_handler(CommandHandler("buy", buy_start))
+    app.add_handler(CommandHandler("sell", sell_start))
+    app.add_handler(CommandHandler("cancel", cancel))
     conv = ConversationHandler(
-        entry_points=[CallbackQueryHandler(buy_start, pattern="^buy$"), CommandHandler("buy", buy_start)],
+        entry_points=[CallbackQueryHandler(buy_start, pattern="^buy$")],
         states={
             AWAIT_BUY_ADDRESS: [MessageHandler(filters.TEXT & ~filters.COMMAND, buy_address)],
             AWAIT_BUY_AMOUNT: [MessageHandler(filters.TEXT & ~filters.COMMAND, buy_amount)],
@@ -38,7 +40,7 @@ def setup_handlers(app, config, discovery, trading):
     )
     app.add_handler(conv)
     conv2 = ConversationHandler(
-        entry_points=[CallbackQueryHandler(sell_start, pattern="^sell$"), CommandHandler("sell", sell_start)],
+        entry_points=[CallbackQueryHandler(sell_start, pattern="^sell$")],
         states={
             AWAIT_SELL_ADDRESS: [CallbackQueryHandler(sell_address, pattern="^sell_")],
             AWAIT_SELL_PCT: [CallbackQueryHandler(sell_percent, pattern="^sellpct_")],
@@ -46,6 +48,16 @@ def setup_handlers(app, config, discovery, trading):
         fallbacks=[CommandHandler("cancel", cancel)],
     )
     app.add_handler(conv2)
+    for pattern, handler_fn in [
+        ("^menu$", cmd_menu),
+        ("^portfolio$", _show_portfolio),
+        ("^positions$", _show_positions),
+        ("^settings$", _show_settings),
+        ("^help$", cmd_help),
+        ("^trading_toggle$", _toggle_trading),
+        ("^mode_toggle$", _toggle_mode),
+    ]:
+        app.add_handler(CallbackQueryHandler(handler_fn, pattern=pattern))
     return app
 
 
@@ -96,14 +108,29 @@ async def main_menu(update: Update, text: str = None):
 
 async def cmd_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await _ensure_admin(update)
-    mode = "Paper" if _config.get("paper_trading") else "LIVE"
-    bal = _trading.executor.balance_usd if _trading else 0
-    await main_menu(update, f"SnapTomy Bot | Mode: {mode}\nBalance: ${bal:.2f}")
+    await cmd_menu(update, context)
 
 
 async def cmd_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if update.callback_query:
+        await update.callback_query.answer()
     await _ensure_admin(update)
-    await main_menu(update)
+    mode = "Paper" if _config.get("paper_trading") else "LIVE"
+    bal = _trading.executor.balance_usd if _trading else 0
+    text = f"SnapTomy Bot | Mode: {mode}\nBalance: ${bal:.2f}"
+    keyboard = [
+        [InlineKeyboardButton("Portfolio", callback_data="portfolio"),
+         InlineKeyboardButton("Positions", callback_data="positions")],
+        [InlineKeyboardButton("Buy Token", callback_data="buy"),
+         InlineKeyboardButton("Sell Token", callback_data="sell")],
+        [InlineKeyboardButton("Settings", callback_data="settings"),
+         InlineKeyboardButton("Help", callback_data="help")],
+    ]
+    reply = InlineKeyboardMarkup(keyboard)
+    if update.callback_query:
+        await update.callback_query.edit_message_text(text, reply_markup=reply)
+    else:
+        await update.effective_message.reply_text(text, reply_markup=reply)
 
 
 async def cmd_help(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -140,7 +167,7 @@ async def cmd_positions(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await _show_positions(update)
 
 
-async def _show_portfolio(update: Update):
+async def _show_portfolio(update: Update, context: ContextTypes.DEFAULT_TYPE = None):
     if not _trading:
         await update.effective_message.reply_text("Trading engine not available")
         return
@@ -155,12 +182,14 @@ async def _show_portfolio(update: Update):
         f"PnL: ${sum(p.get('pnl_usd', 0) for p in pos):+.2f}"
     )
     keyboard = [[InlineKeyboardButton("Back", callback_data="menu")]]
-    msg = await update.effective_message.reply_text(text, reply_markup=InlineKeyboardMarkup(keyboard))
+    reply = InlineKeyboardMarkup(keyboard)
     if update.callback_query:
-        await update.callback_query.edit_message_text(text, reply_markup=InlineKeyboardMarkup(keyboard))
+        await update.callback_query.edit_message_text(text, reply_markup=reply)
+    else:
+        await update.effective_message.reply_text(text, reply_markup=reply)
 
 
-async def _show_positions(update: Update):
+async def _show_positions(update: Update, context: ContextTypes.DEFAULT_TYPE = None):
     if not _trading:
         await update.effective_message.reply_text("Trading engine not available")
         return
@@ -179,38 +208,12 @@ async def _show_positions(update: Update):
     await update.effective_message.reply_text("\n".join(lines), reply_markup=InlineKeyboardMarkup(keyboard))
 
 
-async def cmd_stop(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await _ensure_admin(update)
-    await update.effective_message.reply_text("Not implemented")
-
-
 async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await main_menu(update, "Cancelled")
+    await update.effective_message.reply_text("Cancelled")
     return ConversationHandler.END
 
 
-async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    query = update.callback_query
-    await query.answer()
-    data = query.data
-    if data == "menu":
-        await cmd_menu(update, context)
-    elif data == "portfolio":
-        await _show_portfolio(update)
-    elif data == "positions":
-        await _show_positions(update)
-    elif data == "settings":
-        await _show_settings(update)
-    elif data == "help":
-        await cmd_help(update, context)
-    elif data == "trading_toggle":
-        await _toggle_trading(update)
-    elif data == "mode_toggle":
-        await _toggle_mode(update)
-    return ConversationHandler.END
-
-
-async def _show_settings(update: Update):
+async def _show_settings(update: Update, context: ContextTypes.DEFAULT_TYPE = None):
     cfg = _config.get("trading", {})
     enabled = cfg.get("enabled", False)
     mode = "Paper" if _config.get("paper_trading") else "LIVE"
@@ -227,10 +230,14 @@ async def _show_settings(update: Update):
         [InlineKeyboardButton(f"Switch to {'LIVE' if _config.get('paper_trading') else 'Paper'}", callback_data="mode_toggle")],
         [InlineKeyboardButton("Back", callback_data="menu")],
     ]
-    await update.effective_message.reply_text(text, reply_markup=InlineKeyboardMarkup(keyboard))
+    reply = InlineKeyboardMarkup(keyboard)
+    if update.callback_query:
+        await update.callback_query.edit_message_text(text, reply_markup=reply)
+    else:
+        await update.effective_message.reply_text(text, reply_markup=reply)
 
 
-async def _toggle_trading(update: Update):
+async def _toggle_trading(update: Update, context: ContextTypes.DEFAULT_TYPE = None):
     cfg = _config.get("trading", {})
     cfg["enabled"] = not cfg.get("enabled", False)
     _config["trading"] = cfg
@@ -239,11 +246,12 @@ async def _toggle_trading(update: Update):
         json.dump(_config, f, indent=2)
     if _trading:
         _trading.trading_cfg = cfg
-    await update.effective_message.reply_text(f"Auto-trading: {'ON' if cfg['enabled'] else 'OFF'}")
+    await update.callback_query.answer()
+    await update.callback_query.edit_message_text(f"Auto-trading: {'ON' if cfg['enabled'] else 'OFF'}")
     await _show_settings(update)
 
 
-async def _toggle_mode(update: Update):
+async def _toggle_mode(update: Update, context: ContextTypes.DEFAULT_TYPE = None):
     _config["paper_trading"] = not _config.get("paper_trading", True)
     path = os.path.join(os.path.dirname(__file__), "..", "config.json")
     with open(path, "w") as f:
@@ -251,7 +259,8 @@ async def _toggle_mode(update: Update):
     if _trading:
         _trading.executor.paper_mode = _config.get("paper_trading", True)
     mode = "Paper" if _config.get("paper_trading") else "LIVE"
-    await update.effective_message.reply_text(f"Switched to {mode} mode")
+    await update.callback_query.answer()
+    await update.callback_query.edit_message_text(f"Switched to {mode} mode")
     await _show_settings(update)
 
 
