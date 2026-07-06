@@ -20,7 +20,10 @@ async def main():
     tg_token = config["bot_token"]
     tg_app = ApplicationBuilder().token(tg_token).build()
     notification_mgr = NotificationManager(config, tg_app.bot)
-
+    discovery = DiscoveryEngine(config)
+    trading = TradingEngine(config, notification_mgr)
+    set_trading_engine(trading)
+    discovery.on_token_discovered(trading.enqueue_for_analysis)
     setup_handlers(tg_app, config, discovery, trading)
 
     await tg_app.initialize()
