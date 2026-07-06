@@ -21,29 +21,24 @@ async def main():
     tg_app = ApplicationBuilder().token(tg_token).build()
     notification_mgr = NotificationManager(config, tg_app.bot)
 
-    async def post_init(app):
-        from telegram import MenuButtonCommands
-        await app.bot.set_my_commands([
-            ("menu", "Main menu"),
-            ("portfolio", "Portfolio"),
-            ("positions", "Open positions"),
-            ("buy", "Buy <address> <usd>"),
-            ("sell", "Sell a token"),
-            ("status", "Bot health"),
-            ("help", "Help"),
-        ])
-        await app.bot.set_chat_menu_button(menu_button=MenuButtonCommands())
-
-    tg_app.post_init = post_init
-    discovery = DiscoveryEngine(config)
-    trading = TradingEngine(config, notification_mgr)
-    set_trading_engine(trading)
-    discovery.on_token_discovered(trading.enqueue_for_analysis)
     setup_handlers(tg_app, config, discovery, trading)
 
     await tg_app.initialize()
     await tg_app.start()
     await tg_app.updater.start_polling()
+
+    from telegram import MenuButtonCommands
+    await tg_app.bot.set_my_commands([
+        ("menu", "Main menu"),
+        ("portfolio", "Portfolio"),
+        ("positions", "Open positions"),
+        ("buy", "Buy <address> <usd>"),
+        ("sell", "Sell a token"),
+        ("status", "Bot health"),
+        ("help", "Help"),
+    ])
+    await tg_app.bot.set_chat_menu_button(menu_button=MenuButtonCommands())
+    logger.info("Telegram commands and menu button set")
 
     logger.info("SnapTomy starting (paper trading mode)" if config.get("paper_trading") else "SnapTomy starting (LIVE mode)")
 
