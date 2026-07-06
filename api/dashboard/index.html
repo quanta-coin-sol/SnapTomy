@@ -32,11 +32,6 @@ tr:hover td { background: #2a2a3520; }
 .text-green { color: #00b894; }
 .text-red { color: #e17055; }
 .text-muted { color: #888; }
-.logs { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 12px; line-height: 1.6; max-height: 400px; overflow-y: auto; }
-.log-line { padding: 2px 0; color: #a0a0b0; }
-.log-INFO { color: #6c5ce7; }
-.log-WARNING { color: #fdcb6e; }
-.log-ERROR { color: #e17055; }
 .refresh { background: #6c5ce7; color: #fff; border: none; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-size: 14px; }
 .refresh:hover { background: #5a4bd1; }
 .empty { text-align: center; padding: 40px; color: #888; }
@@ -60,10 +55,6 @@ tr:hover td { background: #2a2a3520; }
     <div id="openPositions"><div class="empty">No open positions</div></div>
   </div>
 
-  <div class="section">
-    <div class="section-title">Recent Logs</div>
-    <div class="logs" id="logsContainer"><div class="empty">Loading...</div></div>
-  </div>
 </div>
 
 <script>
@@ -118,26 +109,11 @@ function renderPositions(data) {
   </tbody></table>`;
 }
 
-function renderLogs(logs) {
-  const lines = logs?.logs || [];
-  const el = document.getElementById('logsContainer');
-  if (!lines.length) {
-    el.innerHTML = '<div class="empty">No logs</div>';
-    return;
-  }
-  el.innerHTML = lines.map(l => {
-    const level = l.includes('ERROR') ? 'ERROR' : l.includes('WARNING') ? 'WARNING' : 'INFO';
-    return `<div class="log-line log-${level}">${l.replace(/</g,'&lt;')}</div>`;
-  }).join('');
-  el.scrollTop = el.scrollHeight;
-}
-
 async function fetchAll() {
-  const [health, portfolio, positions, logs] = await Promise.all([
+  const [health, portfolio, positions] = await Promise.all([
     fetchAPI('/api/health'),
     fetchAPI('/api/portfolio'),
     fetchAPI('/api/positions'),
-    fetchAPI('/api/logs?lines=50'),
   ]);
   if (health) {
     document.getElementById('statusBadge').textContent = health.status === 'ok' ? 'Running' : 'Error';
@@ -148,7 +124,6 @@ async function fetchAll() {
     renderMetrics(portfolio);
   }
   if (positions) renderPositions(positions);
-  if (logs) renderLogs(logs);
 }
 
 fetchAll();
