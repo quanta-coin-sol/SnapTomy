@@ -35,9 +35,8 @@ async def main():
         ("menu", "Main menu"),
         ("portfolio", "Portfolio"),
         ("positions", "Open positions"),
-        ("buy", "Buy <address> <usd>"),
+        ("buy", "Buy <address> <amount>"),
         ("sell", "Sell a token"),
-        ("status", "Bot health"),
         ("help", "Help"),
     ])
     await tg_app.bot.set_chat_menu_button(menu_button=MenuButtonCommands())
