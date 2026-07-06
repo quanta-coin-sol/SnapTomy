@@ -9,3 +9,5 @@ bot.log
 nohup.out
 dist/
 node_modules/
+
+get_tg_id.py
