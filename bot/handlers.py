@@ -354,7 +354,8 @@ async def sell_percent(update: Update, context: ContextTypes.DEFAULT_TYPE):
     result = await _trading.executor.sell(address, "solana", pct)
     if result.get("success"):
         price = result.get("price", 0)
-        await query.edit_message_text(f"Sold {pct}% at ${price:.8f}\nTx: {result.get('tx', '?')[:16]}...")
+        _trading.position_manager.close_position(address, reason="manual_sell")
+        await query.edit_message_text(f"Sold {pct}% at ${price:.8f}")
     else:
         await query.edit_message_text(f"Sell failed: {result.get('error', 'unknown')}")
     return ConversationHandler.END

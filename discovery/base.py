@@ -36,6 +36,8 @@ class DiscoverySource(abc.ABC):
 
     async def start(self):
         self._running = True
+        import random
+        await asyncio.sleep(random.uniform(0, self.config.get("poll_interval_seconds", 60)))
         while self._running:
             try:
                 tokens = await self.fetch()

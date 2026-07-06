@@ -35,7 +35,7 @@
     }
   },
   "discovery": {
-    "poll_interval_seconds": 30,
+    "poll_interval_seconds": 60,
     "max_tokens_per_poll": 20
   },
   "risk": {
